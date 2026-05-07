@@ -30,7 +30,6 @@ BuildRequires:      cmake(Qt6WaylandClient)
 BuildRequires:      gcc-c++
 BuildRequires:      ninja-build
 BuildRequires:      pkgconfig(breakpad)
-BuildRequires:      pkgconfig(cpptrace)
 BuildRequires:      pkgconfig(CLI11)
 BuildRequires:      pkgconfig(gbm)
 BuildRequires:      pkgconfig(glib-2.0)
@@ -41,6 +40,7 @@ BuildRequires:      pkgconfig(pam)
 BuildRequires:      pkgconfig(polkit-agent-1)
 BuildRequires:      pkgconfig(wayland-client)
 BuildRequires:      pkgconfig(wayland-protocols)
+BuildRequires:      cpptrace-devel
 BuildRequires:      qt6-qtbase-private-devel
 BuildRequires:      spirv-tools
 

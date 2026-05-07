@@ -27,7 +27,8 @@ jobs:
             rpmdevtools \
             dnf-plugins-core \
             spectool \
-            yq
+            yq \
+            createrepo_c
 
       - name: Setup rpmbuild tree
         run: |
