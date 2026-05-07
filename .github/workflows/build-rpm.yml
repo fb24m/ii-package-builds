@@ -49,7 +49,7 @@ jobs:
             dnf builddep -y $spec
             rpmbuild -ba $spec
 
-            sudo dnf install "$HOME/rpmbuild/RPMS/x86_64/$package_name.rpm"
+            sudo dnf install "$HOME/rpmbuild/RPMS/x86_64/$package_name.rpm" -y
             rm -rf ~/rpmbuild/RPMS/x86_64/*.rpm
           done
 
