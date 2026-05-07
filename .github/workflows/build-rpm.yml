@@ -55,11 +55,12 @@ jobs:
 
       - name: Build packages
         run: |
+          set -e
           graph=graph.yml
 
           packages=$(yq -r '.packages[]' "$graph")
 
-          for package in $deps; do
+          for package in $packages; do
             cp "specs/$package.spec" ~/rpmbuild/SPECS/
             spec=~/rpmbuild/SPECS/$package.spec
             spectool -g -R $spec

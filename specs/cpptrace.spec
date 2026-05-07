@@ -21,7 +21,6 @@ BuildRequires:  git
 BuildRequires:  ninja-build
 BuildRequires:  libunwind-devel
 
-
 %description
 C++ lightweight logging library used by Quickshell.
 
