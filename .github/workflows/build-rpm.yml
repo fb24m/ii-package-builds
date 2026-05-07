@@ -1,0 +1,76 @@
+name: Build packages
+
+on:
+  push:
+    paths:
+      - "specs/**"
+      - "graph.yml"
+  pull_request:
+    paths:
+      - "specs/**"
+      - "graph.yml"
+
+jobs:
+  rpm:
+    runs-on: ubuntu-latest
+
+    container:
+      image: fedora:44
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install RPM tools
+        run: |
+          dnf install -y \
+            rpm-build \
+            rpmdevtools \
+            dnf-plugins-core \
+            spectool \
+            yq
+
+      - name: Setup rpmbuild tree
+        run: |
+          rpmdev-setuptree
+
+      - name: Build dependencies
+        run: |
+          set -e
+          graph=graph.yml
+
+          deps=$(yq -r '.dependencies[]' "$graph")
+
+          for package in $deps; do
+            cp "specs/$package.spec" ~/rpmbuild/SPECS/
+            spec=~/rpmbuild/SPECS/$package.spec
+            package_name=$(rpmspec -q --qf "%{NVRA}\n" "$spec")
+
+            spectool -g -R $spec
+            dnf builddep -y $spec
+            rpmbuild -ba $spec
+
+            sudo dnf install "$HOME/rpmbuild/RPMS/x86_64/$package_name.rpm"
+            rm -rf ~/rpmbuild/RPMS/x86_64/*.rpm
+          done
+
+      - name: Build all specs
+        run: |
+          set -e
+          graph=graph.yml
+
+          packages=$(yq -r '.packages[]' "$graph")
+
+          for package in $deps; do
+            cp "specs/$package.spec" ~/rpmbuild/SPECS/
+            spec=~/rpmbuild/SPECS/$package.spec
+            spectool -g -R $spec
+            dnf builddep -y $spec
+            rpmbuild -ba $spec
+          done
+
+      - name: Upload RPMs
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpm-packages
+          path: |
+            ~/rpmbuild/RPMS/**/*.rpm

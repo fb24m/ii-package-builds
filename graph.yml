@@ -1,0 +1,6 @@
+dependencies:
+- cpptrace
+
+packages:
+- quickshell
+- matugen
