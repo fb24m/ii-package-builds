@@ -1,5 +1,6 @@
 dependencies:
   - cpptrace
+  - breakpad
 
 packages:
   - quickshell-git
