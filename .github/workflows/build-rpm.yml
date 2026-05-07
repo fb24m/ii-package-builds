@@ -27,8 +27,7 @@ jobs:
             rpmdevtools \
             dnf-plugins-core \
             spectool \
-            yq \
-            git
+            yq
 
       - name: Setup rpmbuild tree
         run: |

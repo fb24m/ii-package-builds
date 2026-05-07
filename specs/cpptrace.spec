@@ -17,6 +17,7 @@ Source0:        %{url}/archive/%{commit}/cpptrace-%{shortcommit}.tar.gz
 BuildRequires:  cmake
 BuildRequires:  gcc-c++
 BuildRequires:  make
+BuildRequired:  git
 BuildRequires:  ninja-build
 BuildRequires:  libunwind-devel
 BuildRequires:  libdwarf-devel
