@@ -6,8 +6,8 @@
 %global tag         4.1.0
 
 Name:               matugen
-Version:            %{tag}
-Release:            0%{?dist}
+Version:        4.1.0
+Release:        202605240159%{?dist}
 Summary:            A cross-platform material you and base16 color generation tool
 
 License:            GPL-2.0
