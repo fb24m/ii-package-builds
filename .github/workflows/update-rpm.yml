@@ -1,0 +1,126 @@
+name: Update old packages
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for Qt6 updates on Fedora 44
+        id: qt6check
+        run: |
+          SPEC_FILE="fedora/specs/quickshell-git.spec"
+          TRACKER_FILE="fedora/specs/.qt6-last-nvr"
+
+          if [ ! -f "$SPEC_FILE" ]; then
+            echo "❌ Error: $SPEC_FILE not found!"
+            exit 1
+          fi
+
+          echo "========================================"
+          echo "Checking Fedora 44 Bodhi for Qt6 updates"
+          echo "========================================"
+
+          # Query Bodhi API for the latest stable qt6-qtbase update on F44
+          BODHI_JSON=$(curl -sL "https://bodhi.fedoraproject.org/updates/?packages=qt6-qtbase&releases=F44&status=stable&rows_per_page=1&content_type=rpm")
+
+          if [ -z "$BODHI_JSON" ]; then
+            echo "❌ Error: Failed to query Bodhi API"
+            exit 1
+          fi
+
+          # Extract the qt6-qtbase NVR from the builds list
+          # The builds array contains objects with "nvr" fields, we want the qt6-qtbase one
+          LATEST_NVR=$(echo "$BODHI_JSON" | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          updates = data.get('updates', [])
+          if not updates:
+              sys.exit(1)
+          builds = updates[0].get('builds', [])
+          for b in builds:
+              if b['nvr'].startswith('qt6-qtbase-') and not b['nvr'].startswith('qt6-qtbase-private') and not b['nvr'].startswith('qt6-qtbase-gui') and not b['nvr'].startswith('qt6-qtbase-mysql') and not b['nvr'].startswith('qt6-qtbase-odbc') and not b['nvr'].startswith('qt6-qtbase-postgresql') and not b['nvr'].startswith('qt6-qtbase-static') and not b['nvr'].startswith('qt6-qtbase-devel') and not b['nvr'].startswith('mingw-qt6-qtbase'):
+                  if b['nvr'].count('-') == 2:  # name-version-release format: qt6-qtbase-6.11.1-1.fc44
+                      print(b['nvr'])
+                      sys.exit(0)
+                  # qt6-qtbase has 2 hyphens in the name, so NVR has format: qt6-qtbase-VERSION-RELEASE
+                  print(b['nvr'])
+                  sys.exit(0)
+          sys.exit(1)
+          ")
+
+          if [ -z "$LATEST_NVR" ]; then
+            echo "⚠️  Could not extract qt6-qtbase NVR from Bodhi. Skipping rebuild."
+            echo "qt6_updated=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "  Latest stable qt6-qtbase NVR: $LATEST_NVR"
+
+          # Compare with last known NVR
+          LAST_NVR=""
+          if [ -f "$TRACKER_FILE" ]; then
+            LAST_NVR=$(cat "$TRACKER_FILE")
+          fi
+          echo "  Last known qt6-qtbase NVR:    ${LAST_NVR:-<none>}"
+
+          if [ "$LATEST_NVR" = "$LAST_NVR" ]; then
+            echo "✅ No Qt6 update detected. Skipping rebuild."
+            echo "qt6_updated=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "🚀 Qt6 update detected! Will trigger rebuild."
+            echo "$LATEST_NVR" > "$TRACKER_FILE"
+            echo "qt6_updated=true" >> "$GITHUB_OUTPUT"
+            echo "qt6_nvr=$LATEST_NVR" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Bump Release to force rebuild
+        if: steps.qt6check.outputs.qt6_updated == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          SPEC_FILE="fedora/specs/quickshell-git.spec"
+
+          TIMESTAMP=$(date +%Y%m%d%H%M)
+          echo "========================================"
+          echo "Bumping Release to $TIMESTAMP to rebuild against updated Qt6..."
+          echo "Qt6 NVR: ${{ steps.qt6check.outputs.qt6_nvr }}"
+          echo "========================================"
+
+          sed -i -E "s/^Release:.*/Release:        $TIMESTAMP%{?dist}/" "$SPEC_FILE"
+
+          git add "$SPEC_FILE" "fedora/specs/.qt6-last-nvr"
+          git commit -m "chore: rebuild quickshell-git for Qt6 update (${{ steps.qt6check.outputs.qt6_nvr }})"
+
+          git pull --rebase origin main
+          git push origin main
+
+          echo "✅ Successfully pushed updates to trigger rebuild."
+
+      - name: Trigger build-rpm workflow
+        if: steps.qt6check.outputs.qt6_updated == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('Triggering build-rpm workflow');
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'build-rpm.yml',
+              ref: 'main'
+            });
+
+      - name: No update needed
+        if: steps.qt6check.outputs.qt6_updated != 'true'
+        run: echo "✅ No Qt6 update on Fedora 44. No rebuild needed."
