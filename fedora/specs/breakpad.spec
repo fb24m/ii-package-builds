@@ -1,5 +1,5 @@
 Name:               breakpad
-Version:            2024.02.16
+Version:            2024.02.01
 Release:            %autorelease
 Summary:            Google Breakpad crash-reporting system
 
