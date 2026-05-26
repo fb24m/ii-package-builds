@@ -33,7 +33,8 @@ Static library for the Google Breakpad crash-reporting system.
 
 %prep
 git clone --depth 1 --branch v%{version} \
-    https://chromium.googlesource.com/breakpad/breakpad .
+    https://chromium.googlesource.com/breakpad/breakpad
+    breakpad-v%{version}
 
 mkdir -p src/third_party/lss
 
@@ -42,12 +43,14 @@ git clone --depth 1 --branch v%{version} \
     src/third_party/lss
 
 %build
+cd breakpad-v%{version}
 export CXXFLAGS="$CXXFLAGS -Wno-error=array-bounds -Wno-maybe-uninitialized"
 autoreconf -fi
 %configure
 %make_build
 
 %install
+cd breakpad-v%{version}
 %make_install
 rm -rf %{buildroot}%{_docdir}/breakpad-0.1
 
