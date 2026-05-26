@@ -12,6 +12,9 @@ BuildRequires:      gcc-c++
 BuildRequires:      pkgconfig(gmock)
 BuildRequires:      pkgconfig(gtest)
 BuildRequires:      pkgconfig(zlib)
+BuildRequires:      autoconf
+BuildRequires:      automake
+BuildRequires:      libtool
 
 %description
 A set of client and server components which implement a crash-reporting system.
@@ -29,12 +32,18 @@ Summary: Static library for %{name}
 Static library for the Google Breakpad crash-reporting system.
 
 %prep
-tar xf %{SOURCE0}
+git clone --depth 1 --branch v%{version} \
+    https://chromium.googlesource.com/breakpad/breakpad .
+
 mkdir -p src/third_party/lss
-tar xf %{SOURCE1} -C src/third_party/lss
+
+git clone --depth 1 --branch v%{version} \
+    https://chromium.googlesource.com/linux-syscall-support \
+    src/third_party/lss
 
 %build
 export CXXFLAGS="$CXXFLAGS -Wno-error=array-bounds -Wno-maybe-uninitialized"
+autoreconf -fi
 %configure
 %make_build
 
