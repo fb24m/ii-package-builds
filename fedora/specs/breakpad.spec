@@ -38,8 +38,7 @@ git clone --depth 1 --branch v%{version} \
 
 mkdir -p src/third_party/lss
 
-git clone --depth 1 --branch v%{version} \
-    https://chromium.googlesource.com/linux-syscall-support \
+git clone --depth 1 https://chromium.googlesource.com/linux-syscall-support \
     src/third_party/lss
 
 %build
