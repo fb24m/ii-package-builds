@@ -1,4 +1,4 @@
-dependencies: # dependencies will be built and put to local repo
+dependencies: # dependencies will be built and installed within action
   - cpptrace
   - breakpad
 
