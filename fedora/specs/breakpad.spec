@@ -33,7 +33,7 @@ Static library for the Google Breakpad crash-reporting system.
 
 %prep
 git clone --depth 1 --branch v%{version} \
-    https://chromium.googlesource.com/breakpad/breakpad
+    https://chromium.googlesource.com/breakpad/breakpad \
     breakpad-v%{version}
 
 mkdir -p src/third_party/lss
